@@ -6,6 +6,7 @@ import json
 from bs4 import BeautifulSoup
 from news_lib import *
 from weather_lib import *
+from getnews import *
 from linebot.exceptions import InvalidSignatureError
 
 from linebot.models import *
@@ -91,6 +92,15 @@ def handle_message(event):
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
+
+    if "郵件" in event.message.text:
+        aa = event.message.text
+        href = aa.replace('郵件','')
+        a = mail_news(href)
+        if a != "":
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="成功寄送，請前往信箱查看"))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="寄送失敗，請檢查您的格式是否有問題"))
     
     if "搜尋" in event.message.text:
         aa = event.message.text
