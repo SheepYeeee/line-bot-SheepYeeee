@@ -12,8 +12,7 @@ from linebot.models import *
 import pymysql
 import re
 
-db = pymysql.connect(host='localhost',user='root',password='0000',db='sheepyeeee_news',charset='utf8')
-cur = db.cursor()
+
 
 app= Flask(__name__)
 line_bot_api = LineBotApi('xi3ziO6Yv6J2b4nz1vSLMMIRRTehz9VFkWpgzytaDNpKxhdnRbcGWzORpjZGUJd8cJ4StMvKZ4lYtn9ZYEi80ckyu0hcjdtq9+hFttTk/ztv0uKckGTaOGjbiCuxvY0zDJClw0Hf7Dj1ek11lsb6RgdB04t89/1O/w1cDnyilFU=')
@@ -42,20 +41,20 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
 
+    db = pymysql.connect(host='localhost',user='root',password='0000',db='sheepyeeee_news',charset='utf8')
+    cur = db.cursor()
+
     if event.message.text == "我的資料":
         your = event.source.user_id
         sql="INSERT INTO `user` (`id`) SELECT %s WHERE NOT EXISTS (SELECT `id` FROM `user` WHERE `id`=%s)"
         cur.execute(sql,(your,your))
-        # db.commit()
-        # cur.close()
-        sql = "SELECT * FROM `user` WHERE id = %s"
-        cur.execute(sql,(your))
+        sqli = "SELECT * FROM `user` WHERE id = %s"
+        cur.execute(sqli,(your))
         rows = cur.fetchall()
-        # db.commit()
-        # cur.close()
+        db.commit()
+        cur.close()
         for row in rows:
             mail = row[1]
-            
             if mail is None:
                 a = "你的id為["+your
                 b = "信箱為空，請輸入您的的信箱，輸入格式如[更新信箱abc@gmail.com]"
@@ -77,8 +76,8 @@ def handle_message(event):
             cur.execute(sql,(email,user_id))
             rows = cur.fetchall()
             reply = "更新成功"
-            # db.commit()
-            # cur.close()
+            db.commit()
+            cur.close()
             line_bot_api.reply_message(event.reply_token,TextSendMessage(text=reply))
         else:
             reply="信箱格式錯誤，請重新輸入"
@@ -151,12 +150,11 @@ def handle_message(event):
         sql = "SELECT * FROM `user` WHERE id = %s"
         cur.execute(sql,(your))
         rows = cur.fetchall()
-        db.commit()
-        cur.close()
+        
         for row in rows:
             mail = row[1]
-            # db.commit()
-            # cur.close()
+            db.commit()
+            cur.close()
         if mail is None or mail == " " or mail == "":
             reply = "您的信箱為空，請先查驗你的身分，請輸入[我的資料]"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
