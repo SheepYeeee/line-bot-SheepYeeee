@@ -8,8 +8,13 @@ from news_lib import *
 from weather_lib import *
 from getnews import *
 from linebot.exceptions import InvalidSignatureError
-
 from linebot.models import *
+import pymysql
+import re
+
+db = pymysql.connect(host='localhost',user='root',password='0000',db='sheepyeeee_news',charset='utf8')
+cur = db.cursor()
+
 app= Flask(__name__)
 line_bot_api = LineBotApi('xi3ziO6Yv6J2b4nz1vSLMMIRRTehz9VFkWpgzytaDNpKxhdnRbcGWzORpjZGUJd8cJ4StMvKZ4lYtn9ZYEi80ckyu0hcjdtq9+hFttTk/ztv0uKckGTaOGjbiCuxvY0zDJClw0Hf7Dj1ek11lsb6RgdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('a8acf3539e24e1b315f7be19ae0000bf')
@@ -32,8 +37,54 @@ def callback():
     return 'OK'
 
 
+    
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+
+    if event.message.text == "我的資料":
+        your = event.source.user_id
+        sql="INSERT INTO `user` (`id`) SELECT %s WHERE NOT EXISTS (SELECT `id` FROM `user` WHERE `id`=%s)"
+        cur.execute(sql,(your,your))
+        # db.commit()
+        # cur.close()
+        sql = "SELECT * FROM `user` WHERE id = %s"
+        cur.execute(sql,(your))
+        rows = cur.fetchall()
+        # db.commit()
+        # cur.close()
+        for row in rows:
+            mail = row[1]
+            
+            if mail is None:
+                a = "你的id為["+your
+                b = "信箱為空，請輸入您的的信箱，輸入格式如[更新信箱abc@gmail.com]"
+                c = a+"]，"+b
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text=c))
+            else:
+                a = "你的id為["+your
+                b = "信箱為["+mail+"]，若要更新信箱，請輸入更新信箱+你的emai，輸入格式如[更新信箱abc@gmail.com]"
+                c = a+"]，"+b
+                line_bot_api.reply_message(event.reply_token,TextSendMessage(text=c))
+
+
+
+    if "更新信箱" in event.message.text:
+        user_id = event.source.user_id
+        email = event.message.text.replace('更新信箱','')
+        if re.match(r'^[0-9a-zA-Z_]{0,19}@[0-9a-zA-Z]{1,13}\.[com,cn,net]{1,3}$',email):
+            sql = "UPDATE `user` SET email= %s Where id = %s"
+            cur.execute(sql,(email,user_id))
+            rows = cur.fetchall()
+            reply = "更新成功"
+            # db.commit()
+            # cur.close()
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text=reply))
+        else:
+            reply="信箱格式錯誤，請重新輸入"
+            line_bot_api.reply_message(event.reply_token,TextSendMessage(text=reply))
+        
+        
 
     if event.message.text == "天氣":
         message = TemplateSendMessage(
@@ -96,11 +147,25 @@ def handle_message(event):
     if "郵件" in event.message.text:
         aa = event.message.text
         href = aa.replace('郵件','')
-        a = mail_news(href)
-        if a != "":
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="成功寄送，請前往信箱查看"))
+        your = event.source.user_id
+        sql = "SELECT * FROM `user` WHERE id = %s"
+        cur.execute(sql,(your))
+        rows = cur.fetchall()
+        db.commit()
+        cur.close()
+        for row in rows:
+            mail = row[1]
+            # db.commit()
+            # cur.close()
+        if mail is None or mail == " " or mail == "":
+            reply = "您的信箱為空，請先查驗你的身分，請輸入[我的資料]"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="寄送失敗，請檢查您的格式是否有問題"))
+            a = mail_news(href,mail)
+            if a != "":
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="成功寄送，請前往信箱查看"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="寄送失敗，請檢查您的格式是否有問題"))
     
     if "搜尋" in event.message.text:
         aa = event.message.text
@@ -201,6 +266,13 @@ def handle_message(event):
     else:
         a = "我是SheepYeeee，是個聊天機器人，如果你想看最新新聞，請輸入[新聞]，我會告訴你最新的即時新聞，如果你想搜尋新聞，請輸入[搜尋關鍵字]，如[搜尋天氣]、[搜尋櫻花]；如果你想知道今日天氣，請輸入[天氣]，或是[台中天氣]、[花蓮天氣]。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
+
+
+    # db.commit()
+    # cur.close()
+
+
+
 
 import os
 if __name__ == "__main__":

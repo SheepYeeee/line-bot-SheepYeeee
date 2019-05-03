@@ -5,6 +5,12 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.header import Header
+import pymysql
+
+# db = pymysql.connect(host='localhost',user='root',password='0000',db='sheepyeeee_news',charset='utf8')
+# cur = db.cursor()
+
+
 
 #聯合內文
 def t_udn(url):
@@ -31,7 +37,7 @@ def t_free(url):
     resp = requests.get(url)
     resp.encoding = 'utf-8'
     soup = BeautifulSoup(resp.text, 'lxml')
-    ros = soup.find('div', attrs={'class':'whitecon articlebody'})
+    ros = soup.find('div', attrs={'class':'whitecon'})
     title = ros.find_next('h1')#標題
     content=[]
     content.append(url)
@@ -92,7 +98,8 @@ def t_ct(url):
 # print(t_ct('https://www.chinatimes.com/realtimenews/20190502002477-260405?chdtv'))
 
 
-def mail_news(url):
+def mail_news(url,usermail):
+    tilte=" "
     if "https://udn.com/" in url:
         a = t_udn(url)
         href = a[0]
@@ -217,12 +224,12 @@ def mail_news(url):
 
     sender = 'xiaoxuanlai233@gmail.com'
     passwd = 'lili23070'
-    receivers = 's11037018@gmail.com'
+    receivers = usermail
 
 
 
     msg = MIMEText(mail_msg, 'html', 'utf-8')
-    subject = '郵件測試'
+    subject = "SheepYeeee幫你把新聞寄過來了喔"
     msg['Subject'] = Header(subject, 'utf-8')
     msg['From'] = sender
     msg['To'] = receivers
