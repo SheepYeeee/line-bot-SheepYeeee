@@ -118,7 +118,7 @@ def handle_message(event):
         message = TemplateSendMessage(
             alt_text='Buttons template',
             template=ButtonsTemplate(
-                thumbnail_image_url='https://i.imgur.com/ixEm52C.jpg',
+                thumbnail_image_url='https://i.imgur.com/NuAGCfY.jpg',
                 title='新聞',
                 text='請選擇想搜尋的新聞社',
                 actions=[
@@ -143,9 +143,9 @@ def handle_message(event):
         )
         line_bot_api.reply_message(event.reply_token, message)
 
-    if "郵件" in event.message.text:
+    if "郵寄" in event.message.text:
         aa = event.message.text
-        href = aa.replace('郵件','')
+        href = aa.replace('郵寄','')
         your = event.source.user_id
         sql = "SELECT * FROM `user` WHERE id = %s"
         cur.execute(sql,(your))
@@ -206,7 +206,6 @@ def handle_message(event):
 
     elif event.message.text == "你好":
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=event.message.text))
-
     elif event.message.text == "台中天氣" or event.message.text == "臺中天氣":
         a = Taichung_City()
         b ='\n'.join(a)
@@ -261,9 +260,40 @@ def handle_message(event):
     elif event.message.text == "找飯店":
         a = "trivago"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
-    else:
-        a = "我是SheepYeeee，是個聊天機器人，如果你想看最新新聞，請輸入[新聞]，我會告訴你最新的即時新聞，如果你想搜尋新聞，請輸入[搜尋關鍵字]，如[搜尋天氣]、[搜尋櫻花]；如果你想知道今日天氣，請輸入[天氣]，或是[台中天氣]、[花蓮天氣]。"
+    elif event.message.text == "新聞功能":
+        a = "我是SheepYeeee，是個聊天機器人，如果你想看最新新聞，請輸入[新聞]，我會告訴你最新的即時新聞，如果你想搜尋新聞，請輸入[搜尋關鍵字]，如[搜尋櫻花]；如果你想要將喜歡的新聞郵寄至個人信箱，請輸入[郵寄網址]，如[郵寄https: // example . com]，我會將新聞內容及原文連結郵寄到你的個人信箱，目前只有聯合、自由、tvbs、中時的新聞可以郵寄。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
+    elif event.message.text == "天氣功能":
+        b = "如果你想知道今日天氣，請輸入[天氣]，或是[台中天氣]、[花蓮天氣]、[台南天氣]...等。"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif event.message.text == "個人資料功能":
+        c = "如果你不確定是否輸入了你的個人信箱，請先輸入[我的資料]查驗，若信箱為空或是想要換別的信箱，請輸入[更新信箱+個人信箱]，如[更新信箱abc@gmail.com]"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=c))
+    else:
+        message = TemplateSendMessage(
+            alt_text='Buttons template',
+            template=ButtonsTemplate(
+                thumbnail_image_url='https://i.imgur.com/qNms29t.jpg',
+                title='使用說明',
+                text='請選擇想了解的服務',
+                actions=[
+                    MessageTemplateAction(
+                        label='新聞功能',
+                        text='新聞功能',
+                    ),
+                    MessageTemplateAction(
+                        label='天氣功能',
+                        text='天氣功能'
+                    ),
+                    MessageTemplateAction(
+                        label='個人資料功能',
+                        text='個人資料功能'
+                    )
+                ]
+            )
+        )
+        line_bot_api.reply_message(event.reply_token, message)
+        
 
 
     # db.commit()

@@ -10,8 +10,6 @@ import pymysql
 # db = pymysql.connect(host='localhost',user='root',password='0000',db='sheepyeeee_news',charset='utf8')
 # cur = db.cursor()
 
-
-
 #聯合內文
 def t_udn(url):
 
