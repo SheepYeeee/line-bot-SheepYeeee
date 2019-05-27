@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort,make_response,jsonify
 from linebot import LineBotApi, WebhookHandler
 from selenium import webdriver
 import requests
@@ -11,6 +11,8 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
 import pymysql
 import re
+import random
+
 
 
 
@@ -35,7 +37,58 @@ def callback():
         abort(400)
     return 'OK'
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    req = request.get_json(silent=True, force=True)
+    print("Request:")
+    print(json.dumps(req, indent=4))
 
+    res = makeResult(req)
+
+    res = json.dumps(res, indent=4)
+    print(res)
+    r = make_response(res)
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+def makeResult(req):
+
+    if req.get('queryResult').get('action') != "askweather":
+        print("Please check your action name in DialogFlow...")
+        return {}
+
+    result = req.get("queryResult")
+    parameters = result.get("parameters")
+    citys = parameters.get('taiwan-city')
+    city = "".join(citys)
+    if city == "taichung":
+        a = Taichung_City()
+        b ='\n'.join(a)
+        speech = b
+    elif city == "taipei":
+        a = Taipei_City()
+        b ='\n'.join(a)
+        speech = b
+    elif city == "tainan":
+        a = Tainan_City()
+        b ='\n'.join(a)
+        speech = b
+    elif city == "kaohsiung":
+        a = Kaohsiung_City()
+        b ='\n'.join(a)
+        speech = b
+    elif city == "桃園":
+        a = Taoyuan_City()
+        b ='\n'.join(a)
+        speech = b
+    else:
+        speech = "Hi," + city 
+    print("Response:"+speech)
+    my_result = {
+                    "fulfillmentText": speech,
+                    "source": "agent"
+                }
+    return my_result
     
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -115,6 +168,28 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, message)
 
     if event.message.text == "新聞":
+        message = TemplateSendMessage(
+            alt_text='Buttons template',
+            template=ButtonsTemplate(
+                thumbnail_image_url='https://i.imgur.com/NuAGCfY.jpg',
+                title='新聞',
+                text='請選擇要看哪一種新聞',
+                actions=[
+                    MessageTemplateAction(
+                        label='即時新聞',
+                        text='即時新聞',
+                    ),
+                    MessageTemplateAction(
+                        label='各家新聞',
+                        text='各家新聞'
+                    )
+                
+                ]
+            )
+        )
+        line_bot_api.reply_message(event.reply_token, message)
+
+    if event.message.text == "各家新聞":
         message = TemplateSendMessage(
             alt_text='Buttons template',
             template=ButtonsTemplate(
@@ -203,63 +278,85 @@ def handle_message(event):
         a = ct_news()
         content='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=content))
-
+    elif event.message.text == "即時新聞":
+        def_list = [udn_news,tvbs_news,free_news,ct_news]
+        a = random.choice(def_list)()
+        content='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=content))
     elif event.message.text == "你好":
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=event.message.text))
-    elif event.message.text == "台中天氣" or event.message.text == "臺中天氣":
+    elif  "台中天氣" in event.message.text or "臺中天氣" in event.message.text:
         a = Taichung_City()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "台北天氣" or event.message.text == "臺北天氣":
+    elif "台北天氣" in event.message.text or "臺北天氣" in event.message.text:
         a = Taipei_City()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "桃園天氣":
+    elif "基隆天氣" in event.message.text:
+        a = Taipei_City()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "桃園天氣" in event.message.text:
         a = Taoyuan_City()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "新竹天氣":
+    elif "新竹天氣" in event.message.text:
         a = Hsinchu_City()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "台南天氣" or event.message.text == "臺南天氣":
+    elif "台南天氣" in event.message.text or "臺南天氣" in event.message.text:
         a = Tainan_City()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "高雄天氣":
+    elif "高雄天氣" in event.message.text:
         a = Kaohsiung_City()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "台東天氣" or event.message.text == "臺東天氣":
+    elif "新北天氣" in event.message.text:
+        a = New_Taipei_City()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "台東天氣" in event.message.text or "臺東天氣" in event.message.text:
         a = Taitung_County()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "花蓮天氣":
+    elif "苗栗天氣" in event.message.text:
+        a = Miaoli_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "彰化天氣" in event.message.text:
+        a = Changhua_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "雲林天氣" in event.message.text:
+        a = Yunlin_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "嘉義天氣" in event.message.text:
+        a =Chiayi_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "宜蘭天氣" in event.message.text:
+        a =Yilan_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "澎湖天氣" in event.message.text:
+        a =Penghu_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "南投天氣" in event.message.text:
+        a = Nantou_County()
+        b ='\n'.join(a)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
+    elif "花蓮天氣" in event.message.text:
         a = Hualien_County()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "屏東天氣":
+    elif "屏東天氣" in event.message.text:
         a = Pingtung_County()
         b ='\n'.join(a)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=b))
-    elif event.message.text == "回答我":
-        a = "我盡力了"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
-    elif event.message.text == "??":
-        a="??"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
-    elif event.message.text == "==":
-        a="=="
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
-    elif event.message.text == "^^":
-        a="^^"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
-    elif event.message.text == "早安":
-        a = "早安安"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
-    elif event.message.text == "找飯店":
-        a = "trivago"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
     elif event.message.text == "新聞功能":
         a = "我是SheepYeeee，是個聊天機器人，如果你想看最新新聞，請輸入[新聞]，我會告訴你最新的即時新聞，如果你想搜尋新聞，請輸入[搜尋關鍵字]，如[搜尋櫻花]；如果你想要將喜歡的新聞郵寄至個人信箱，請輸入[郵寄網址]，如[郵寄https: // example . com]，我會將新聞內容及原文連結郵寄到你的個人信箱，目前只有聯合、自由、tvbs、中時的新聞可以郵寄。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=a))
